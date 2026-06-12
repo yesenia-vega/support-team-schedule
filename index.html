@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Team Schedule</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #ffffff; --bg-secondary: #f5f5f4; --bg-info: #e6f1fb;
+      --text-primary: #1a1a1a; --text-secondary: #6b6b6b; --text-tertiary: #a3a3a3;
+      --text-info: #185fa5; --border: rgba(0,0,0,0.12); --border-secondary: rgba(0,0,0,0.2);
+      --radius-md: 8px; --radius-lg: 12px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1c1c1e; --bg-secondary: #2c2c2e; --bg-info: #0c2a45;
+        --text-primary: #f5f5f5; --text-secondary: #a0a0a0; --text-tertiary: #6b6b6b;
+        --text-info: #85b7eb; --border: rgba(255,255,255,0.1); --border-secondary: rgba(255,255,255,0.2);
+      }
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg-secondary); color: var(--text-primary); min-height: 100vh; padding: 2rem 1rem; }
+    .container { max-width: 680px; margin: 0 auto; }
+    h1 { font-size: 20px; font-weight: 500; color: var(--text-primary); margin-bottom: 1.5rem; }
+    .controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1.25rem; align-items: center; }
+    input[type="text"], select { padding: 8px 12px; font-size: 14px; border: 0.5px solid var(--border-secondary); border-radius: var(--radius-md); background: var(--bg); color: var(--text-primary); outline: none; font-family: inherit; transition: border-color 0.15s; }
+    input[type="text"] { flex: 1; min-width: 160px; }
+    input[type="text"]:focus, select:focus { border-color: #185fa5; box-shadow: 0 0 0 3px rgba(24,95,165,0.12); }
+    select { min-width: 210px; cursor: pointer; }
+    .online-btn { display: flex; align-items: center; gap: 7px; padding: 8px 14px; font-size: 13px; font-family: inherit; border-radius: var(--radius-md); border: 0.5px solid var(--border-secondary); background: var(--bg); color: var(--text-primary); cursor: pointer; transition: background 0.15s; white-space: nowrap; }
+    .online-btn:hover { background: var(--bg-secondary); }
+    .pulse { width: 8px; height: 8px; border-radius: 50%; background: #4caf50; flex-shrink: 0; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }
+    .member-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+    .tab { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text-secondary); transition: all 0.15s; display: flex; align-items: center; gap: 6px; font-family: inherit; }
+    .tab:hover { border-color: var(--border-secondary); color: var(--text-primary); }
+    .tab.active { border-color: var(--border-secondary); border-width: 1.5px; color: var(--text-primary); font-weight: 500; }
+    .tab.hidden { display: none; }
+    .tab.online-highlight { border-color: #4caf50 !important; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .online-banner { background: var(--bg-secondary); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 1.25rem; }
+    .online-banner h3 { font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .online-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .online-chip { display: flex; align-items: center; gap: 6px; background: var(--bg); border: 0.5px solid #4caf50; border-radius: var(--radius-md); padding: 5px 12px; font-size: 13px; cursor: pointer; color: var(--text-primary); font-family: inherit; transition: background 0.15s; }
+    .online-chip:hover { background: var(--bg-secondary); }
+    .online-chip .dot { background: #4caf50; }
+    .none-msg { font-size: 13px; color: var(--text-tertiary); font-style: italic; }
+    .card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; }
+    .card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 0.5px solid var(--border); }
+    .avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 500; font-size: 14px; flex-shrink: 0; }
+    .card-title { font-size: 16px; font-weight: 500; color: var(--text-primary); }
+    .card-subtitle { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+    .tz-label { margin-left: auto; font-size: 12px; color: var(--text-secondary); background: var(--bg-secondary); padding: 3px 8px; border-radius: var(--radius-md); border: 0.5px solid var(--border); white-space: nowrap; }
+    .online-badge { margin-left: 8px; display: inline-flex; align-items: center; gap: 4px; background: #e8f5e9; color: #2e7d32; border-radius: var(--radius-md); padding: 2px 8px; font-size: 11px; font-weight: 500; }
+    .day-grid { display: flex; flex-direction: column; gap: 8px; }
+    .day-row { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; }
+    .day-row.active-row { background: var(--bg-secondary); border-radius: var(--radius-md); padding: 4px 6px; margin: 0 -6px; }
+    .day-name { width: 38px; color: var(--text-secondary); font-weight: 500; flex-shrink: 0; padding-top: 3px; }
+    .day-shift { flex: 1; }
+    .day-off { color: var(--text-tertiary); font-style: italic; padding-top: 3px; }
+    .shift-pill { display: inline-block; background: var(--bg-info); color: var(--text-info); border-radius: var(--radius-md); padding: 3px 10px; font-size: 12px; font-weight: 500; }
+    .shift-pill.active-shift { background: #e8f5e9; color: #2e7d32; }
+    .shift-secondary { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+    .total-row { margin-top: 1rem; padding-top: 0.75rem; border-top: 0.5px solid var(--border); font-size: 13px; font-weight: 500; color: var(--text-primary); }
+    .local-time { font-size: 12px; color: var(--text-tertiary); margin-left: auto; }
+    @media (max-width: 480px) {
+      .controls { flex-direction: column; }
+      select, .online-btn { width: 100%; justify-content: center; }
+      .tz-label { display: none; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Team Schedule</h1>
+  <div class="controls">
+    <input type="text" id="search" placeholder="Search by name..." oninput="filterMembers()" />
+    <select id="tz" onchange="renderCard()">
+      <option value="CDT">CDT — Chicago (UTC-5)</option>
+      <option value="EST">EST — New York (UTC-5)</option>
+      <option value="BRT">BRT — São Paulo (UTC-3)</option>
+      <option value="CEST">CEST — Malta (UTC+2)</option>
+      <option value="PHT">PHT — Manila (UTC+8)</option>
+      <option value="UTC">UTC</option>
+    </select>
+    <button class="online-btn" onclick="checkOnline()">
+      <span class="pulse"></span> Who's online?
+    </button>
+  </div>
+  <div id="online-banner" style="display:none"></div>
+  <div class="member-tabs" id="tabs"></div>
+  <div id="card-area"></div>
+</div>
+
+<script>
+  const TZ_OFFSETS = { CDT: -5, EST: -5, BRT: -3, CEST: 2, PHT: 8, UTC: 0 };
+  const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  const MEMBERS = [
+    { name:"Yesenia", location:"CHI", color:"#8B9DC3", initials:"YC", displayTZ:"CDT",
+      scheduleUTC:[
+        {day:"Mon",start:15,end:23},{day:"Tue",start:15,end:23},{day:"Wed",start:15,end:23},
+        {day:"Thu",start:15,end:23},{day:"Fri",start:15,end:23},{day:"Sat",off:true},{day:"Sun",off:true}
+      ], hoursPerWeek:40 },
+    { name:"Ollie", location:"EU — Malta", color:"#7BC87B", initials:"OE", displayTZ:"CEST",
+      scheduleUTC:[
+        {day:"Mon",start:7,end:15},{day:"Tue",start:7,end:15},{day:"Wed",start:7,end:15},
+        {day:"Thu",start:7,end:15},{day:"Fri",start:7,end:15},{day:"Sat",off:true},{day:"Sun",off:true}
+      ], hoursPerWeek:40 },
+    { name:"Wemerson", location:"BRZ — São Paulo", color:"#6BC9A0", initials:"WB", displayTZ:"BRT",
+      scheduleUTC:[
+        {day:"Mon",start:9,end:19},{day:"Tue",start:9,end:18},{day:"Wed",start:9,end:18},
+        {day:"Thu",off:true},{day:"Fri",off:true},{day:"Sat",start:7,end:19},{day:"Sun",off:true}
+      ], hoursPerWeek:40 },
+    { name:"Romer", location:"PH — Manila", color:"#E8C56A", initials:"RP", displayTZ:"CDT",
+      scheduleUTC:[
+        {day:"Sun",start:9,end:21},{day:"Mon",start:23,end:33},
+        {day:"Tue",start:23,end:33},{day:"Wed",start:23,end:31},
+        {day:"Thu",off:true},{day:"Fri",off:true},{day:"Sat",off:true}
+      ], hoursPerWeek:40 },
+    { name:"Mando", location:"PH — Manila", color:"#A89CC8", initials:"MP", displayTZ:"CDT",
+      scheduleUTC:[
+        {day:"Mon",off:true},{day:"Tue",off:true},{day:"Wed",off:true},
+        {day:"Thu",start:23,end:31},{day:"Fri",start:23,end:33},
+        {day:"Sat",start:21,end:33},{day:"Sun",start:5,end:15}
+      ], hoursPerWeek:40 }
+  ];
+
+  let activeMember = 0;
+  let onlineSet = new Set();
+
+  function getNowUTC() {
+    const now = new Date();
+    return now.getUTCHours() + now.getUTCMinutes() / 60;
+  }
+
+  function isOnline(member) {
+    const utcHour = getNowUTC();
+    const utcDayIdx = new Date().getUTCDay();
+    return member.scheduleUTC.some(s => {
+      if (s.off) return false;
+      const shiftDayIdx = DAYS.indexOf(s.day);
+      const nowAbs = utcDayIdx * 24 + utcHour;
+      const startAbs = shiftDayIdx * 24 + s.start;
+      const endAbs = shiftDayIdx * 24 + s.end;
+      return nowAbs >= startAbs && nowAbs < endAbs;
+    });
+  }
+
+  function fmt(h) {
+    const norm = ((h % 24) + 24) % 24;
+    const ampm = norm >= 12 ? 'pm' : 'am';
+    const hr = norm % 12 === 0 ? 12 : norm % 12;
+    return `${hr}${ampm}`;
+  }
+  function getDayNote(h) {
+    if (h < 0) return ' (prev day)';
+    if (h >= 24) return ' (next day)';
+    return '';
+  }
+  function toDisplayTZ(utcStart, utcEnd, toTZ) {
+    const offset = TZ_OFFSETS[toTZ];
+    return { start: utcStart + offset, end: utcEnd + offset };
+  }
+
+  function checkOnline() {
+    onlineSet = new Set();
+    MEMBERS.forEach((m, i) => { if (isOnline(m)) onlineSet.add(i); });
+    const banner = document.getElementById('online-banner');
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (onlineSet.size === 0) {
+      banner.innerHTML = `<div class="online-banner">
+        <h3><span class="pulse" style="background:#aaa;animation:none"></span> Nobody online right now <span class="local-time">your local time: ${timeStr}</span></h3>
+        <p class="none-msg">Check back later or adjust the timezone to see upcoming shifts.</p>
+      </div>`;
+    } else {
+      const chips = [...onlineSet].map(i => {
+        const m = MEMBERS[i];
+        return `<button class="online-chip" onclick="selectMember(${i})"><span class="dot"></span>${m.name}</button>`;
+      }).join('');
+      banner.innerHTML = `<div class="online-banner">
+        <h3><span class="pulse"></span> Online now <span class="local-time">your local time: ${timeStr}</span></h3>
+        <div class="online-list">${chips}</div>
+      </div>`;
+    }
+    banner.style.display = 'block';
+    renderTabs();
+    renderCard();
+  }
+
+  function renderTabs() {
+    document.getElementById('tabs').innerHTML = MEMBERS.map((m, i) => `
+      <button class="tab ${i === activeMember ? 'active' : ''} ${onlineSet.has(i) ? 'online-highlight' : ''}" id="tab-${i}" onclick="selectMember(${i})">
+        <span class="dot" style="background:${m.color}"></span>${m.name}
+      </button>`).join('');
+  }
+
+  function selectMember(i) {
+    activeMember = i;
+    renderTabs();
+    renderCard();
+  }
+
+  function filterMembers() {
+    const q = document.getElementById('search').value.toLowerCase();
+    MEMBERS.forEach((m, i) => {
+      const tab = document.getElementById(`tab-${i}`);
+      if (tab) tab.classList.toggle('hidden', !m.name.toLowerCase().includes(q));
+    });
+    const first = MEMBERS.findIndex(m => m.name.toLowerCase().includes(q));
+    if (first >= 0 && !MEMBERS[activeMember].name.toLowerCase().includes(q)) selectMember(first);
+  }
+
+  function renderCard() {
+    const m = MEMBERS[activeMember];
+    const toTZ = document.getElementById('tz').value;
+    const memberOnline = onlineSet.has(activeMember);
+    const utcNow = getNowUTC();
+    const utcDayIdx = new Date().getUTCDay();
+
+    const rows = m.scheduleUTC.map(s => {
+      if (s.off) return `<div class="day-row"><span class="day-name">${s.day}</span><span class="day-off">off</span></div>`;
+      const disp = toDisplayTZ(s.start, s.end, toTZ);
+      const hrs = s.end - s.start;
+      const label = `${fmt(disp.start)}${getDayNote(disp.start)} – ${fmt(disp.end)}${getDayNote(disp.end)}`;
+      const shiftDayIdx = DAYS.indexOf(s.day);
+      const nowAbs = utcDayIdx * 24 + utcNow;
+      const startAbs = shiftDayIdx * 24 + s.start;
+      const endAbs = shiftDayIdx * 24 + s.end;
+      const isActive = memberOnline && nowAbs >= startAbs && nowAbs < endAbs;
+      return `<div class="day-row ${isActive ? 'active-row' : ''}">
+        <span class="day-name">${s.day}</span>
+        <div class="day-shift">
+          <span class="shift-pill ${isActive ? 'active-shift' : ''}">${label}${isActive ? ' ●' : ''}</span>
+          <div class="shift-secondary">${hrs} hrs</div>
+        </div>
+      </div>`;
+    }).join('');
+
+    const tzLabel = toTZ === m.displayTZ ? `${toTZ} (home timezone)` : `${m.displayTZ} → ${toTZ}`;
+    document.getElementById('card-area').innerHTML = `
+      <div class="card">
+        <div class="card-header">
+          <div class="avatar" style="background:${m.color}20; color:${m.color}">${m.initials}</div>
+          <div>
+            <div class="card-title">${m.name}${memberOnline ? '<span class="online-badge"><span style="width:6px;height:6px;border-radius:50%;background:#4caf50;display:inline-block;margin-right:3px"></span>online</span>' : ''}</div>
+            <div class="card-subtitle">${m.location}</div>
+          </div>
+          <div class="tz-label">${tzLabel}</div>
+        </div>
+        <div class="day-grid">${rows}</div>
+        <div class="total-row">${m.hoursPerWeek} hrs / week</div>
+      </div>`;
+  }
+
+  renderTabs();
+  renderCard();
+</script>
+</body>
+</html>
